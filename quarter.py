@@ -38,5 +38,5 @@ def txtwindow(str):
 if __name__ == '__main__':
  str = 'Apple'
  s = txtwindow(str)
- print(s)
+ # print(s)
 
