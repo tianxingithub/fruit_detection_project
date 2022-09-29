@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QTextBrowser" name="fruitLog">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>340</y>
+      <width>771</width>
+      <height>191</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QGraphicsView" name="graphicsView">
+    <property name="geometry">
+     <rect>
+      <x>480</x>
+      <y>10</y>
+      <width>301</width>
+      <height>301</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QTextBrowser" name="fruitInfo">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>10</y>
+      <width>441</width>
+      <height>301</height>
+     </rect>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu">
+    <property name="title">
+     <string>关于</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="fruitKind">
+    <property name="title">
+     <string>筛选的水果类别</string>
+    </property>
+    <addaction name="actionApple"/>
+    <addaction name="actionBanana"/>
+    <addaction name="actionOrange"/>
+    <addaction name="actionMonago"/>
+    <addaction name="actionPineApple"/>
+   </widget>
+   <widget class="QMenu" name="fruitStatus">
+    <property name="title">
+     <string>状态</string>
+    </property>
+    <addaction name="actionStart"/>
+    <addaction name="actionEnd"/>
+    <addaction name="actionStep"/>
+   </widget>
+   <addaction name="fruitStatus"/>
+   <addaction name="fruitKind"/>
+   <addaction name="menu"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionApple">
+   <property name="text">
+    <string>Apple</string>
+   </property>
+  </action>
+  <action name="actionBanana">
+   <property name="text">
+    <string>Banana</string>
+   </property>
+  </action>
+  <action name="actionOrange">
+   <property name="text">
+    <string>Orange</string>
+   </property>
+  </action>
+  <action name="actionPineApple">
+   <property name="text">
+    <string>PineApple</string>
+   </property>
+  </action>
+  <action name="actionMonago">
+   <property name="text">
+    <string>Mongo</string>
+   </property>
+  </action>
+  <action name="actionStart">
+   <property name="text">
+    <string>Start</string>
+   </property>
+  </action>
+  <action name="actionEnd">
+   <property name="text">
+    <string>End</string>
+   </property>
+  </action>
+  <action name="actionStep">
+   <property name="text">
+    <string>Step</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
