@@ -25,6 +25,8 @@ class FruitWindow(QtWidgets.QMainWindow):
         self.ui.actionOrange.triggered.connect(self.changeFruit2)
         self.ui.actionMonago.triggered.connect(self.changeFruit3)
         self.ui.actionPineApple.triggered.connect(self.changeFruit4)
+        self.ui.about.triggered.connect(self.updateCount)
+        self.ui.actionEnd.triggered.connect(self.updateCount)
 
 
         self.count = 0
@@ -49,7 +51,7 @@ class FruitWindow(QtWidgets.QMainWindow):
 
     def printFruitCount(self,fruit):
         self.fruitCount[fruit] = self.fruitCount[fruit]+1
-        print(f'Have chose {fruit} {self.fruitCount[fruit]} times')
+        print(f'    Have chose {fruit} {self.fruitCount[fruit]} times')
 
     def getFruit(self,test_img):
         img = image.load_img(test_img, target_size=(128, 128))
@@ -68,21 +70,16 @@ class FruitWindow(QtWidgets.QMainWindow):
 
     def start(self):
         self.addLog('check start')
-        for i in range(20):
+        for i in range(10):
             pp = self.getPath()
             if pp == 'no pic':
                 pass
-                # print('there is no fruit')
-                # self.ui.fruitLog.append('no fruit emerge')
             else:
                 pp = str(pp[:-1], 'utf-8')
-                # print(ist, self.count, ':', pp)
                 fID = self.getFruit(pp)
                 self.showFruit2(pp)
                 print('fruit is ',self.fruitDict[fID])
-                if fID == self.fruitID:
-                    self.chooseFruit()
-                    self.printFruitCount(self.fruitDict[fID])
+                self.chooseFruit(fID)
         print('='*40)
         self.addLog('start is over')
 
@@ -106,15 +103,9 @@ class FruitWindow(QtWidgets.QMainWindow):
         msg = self.fd1.readlines()
         pp = msg[-1]
         pp = str(pp[:-1], 'utf-8')
-        # print(self.count,':',pp)
         self.showFruit(pp)
-
         fID = self.getFruit(pp)
-        self.showFruit2(pp)
-        # print('fruit is ', self.fruitDict[fID])
-        if fID == self.fruitID:
-            self.chooseFruit()
-            self.printFruitCount(self.fruitDict[fID])
+        self.chooseFruit(fID)
 
     def end(self):
         self.addLog('end')
@@ -141,8 +132,19 @@ class FruitWindow(QtWidgets.QMainWindow):
         cv2.imshow("Fruit", img)
         cv2.waitKey(1)
 
-    def chooseFruit(self):
-        self.fd1.write(b'\xff\x01')
+    def chooseFruit(self,id):
+        if id == self.fruitID:
+            self.fd1.write(b'\xff\x01')
+            self.printFruitCount(self.fruitDict[id])
+
+
+    def updateCount(self):
+        # self.ui.count0.setText(str(self.fruitCount['Apple']))
+        # self.ui.count1.setText(str(self.fruitCount['Banana']))
+        # self.ui.count2.setText(str(self.fruitCount['Orange']))
+        # self.ui.count3.setText(str(self.fruitCount['Mongo']))
+        # self.ui.count4.setText(str(self.fruitCount['PineApple']))
+        print('count')
 
 
 
