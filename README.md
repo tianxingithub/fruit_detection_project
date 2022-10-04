@@ -7,7 +7,7 @@
 模型构建：使用了Conv2D、MaxPooling2D、Flatten、Dense、Dropout层，输入张量形状是(128, 128, 3)，输出的结果是5个水果种类的概率
 
 主要的py文件说明：
-Fruit_Master.py：主文件，运行时的文件
+Fruit_detection.py：主文件，运行时的文件
 FruitPrevision.py：QT界面文件
 FruitClassifyTraing.py：模型训练
 FruitClassifyTest.py：模型测试
