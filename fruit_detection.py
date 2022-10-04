@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import QMainWindow, QGraphicsPixmapItem, QGraphicsScene
 from tensorflow.keras.preprocessing import image
 from pyqt5_plugins.examplebutton import QtWidgets
 from keras.models import load_model
+import fruitInformation
 
 import FruitPrevision
 
@@ -17,8 +18,8 @@ class FruitWindow(QtWidgets.QMainWindow):
         QtWidgets.QMainWindow.__init__(self)
         self.ui = FruitPrevision.Ui_MainWindow()
         self.ui.setupUi(self)
-        self.ui.actionStart.triggered.connect(self.start)
-        self.ui.actionStep.triggered.connect(self.step)
+        self.ui.actionStart.triggered.connect(self.start2)
+        self.ui.actionStep.triggered.connect(self.step2)
         self.ui.actionEnd.triggered.connect(self.end)
         self.ui.actionApple.triggered.connect(self.changeFruit0)
         self.ui.actionBanana.triggered.connect(self.changeFruit1)
@@ -26,10 +27,8 @@ class FruitWindow(QtWidgets.QMainWindow):
         self.ui.actionMonago.triggered.connect(self.changeFruit3)
         self.ui.actionPineApple.triggered.connect(self.changeFruit4)
         self.ui.about.triggered.connect(self.updateCount)
-        self.ui.actionEnd.triggered.connect(self.updateCount)
 
-
-        self.count = 0
+        self.count = 1
         self.fd1 = serial.Serial("COM1", baudrate=115200, timeout=1)
         self.going = True
         self.fruitID = 0
@@ -48,6 +47,8 @@ class FruitWindow(QtWidgets.QMainWindow):
             'Mongo':0,
             'PineApple':0
         }
+        self.updateCount()
+
 
     def printFruitCount(self,fruit):
         self.fruitCount[fruit] = self.fruitCount[fruit]+1
@@ -68,10 +69,17 @@ class FruitWindow(QtWidgets.QMainWindow):
             return 'no pic'
         return msg
 
+    def getPath2(self):
+        path = f'./test/{self.count}.png'
+        if self.count == 32:
+            self.count = 0
+        self.count = self.count+1
+        return path
+
     def start(self):
         self.addLog('check start')
         for i in range(10):
-            pp = self.getPath()
+            pp = self.getPath2()
             if pp == 'no pic':
                 pass
             else:
@@ -82,6 +90,39 @@ class FruitWindow(QtWidgets.QMainWindow):
                 self.chooseFruit(fID)
         print('='*40)
         self.addLog('start is over')
+
+    def start2(self):
+        self.addLog('check start')
+        for i in range(10):
+            pp = self.getPath2()
+            if pp == 'no pic':
+                pass
+            else:
+                # pp = str(pp[:-1], 'utf-8')
+                fID = self.getFruit(pp)
+                self.showFruit2(pp)
+                print('fruit is ',self.fruitDict[fID])
+                self.chooseFruit(fID)
+        print('='*40)
+        self.addLog('start is over')
+
+    def step(self):
+        self.addLog('check step')
+        msg = self.fd1.readlines()
+        pp = msg[-1]
+        pp = str(pp[:-1], 'utf-8')
+        self.showFruit(pp)
+        fID = self.getFruit(pp)
+        self.chooseFruit(fID)
+
+    def step2(self):
+        self.addLog('check step')
+        path = self.getPath2()
+        self.showFruit(path)
+        fID = self.getFruit(path)
+        self.chooseFruit(fID)
+
+
 
     def changeFruit0(self):
         self.changeID(0)
@@ -97,15 +138,6 @@ class FruitWindow(QtWidgets.QMainWindow):
     def changeID(self,ID):
         self.fruitID = ID
         self.addLog(f'changed fruit, now fruit is {self.fruitDict[ID]}')
-
-    def step(self):
-        self.addLog('check step')
-        msg = self.fd1.readlines()
-        pp = msg[-1]
-        pp = str(pp[:-1], 'utf-8')
-        self.showFruit(pp)
-        fID = self.getFruit(pp)
-        self.chooseFruit(fID)
 
     def end(self):
         self.addLog('end')
@@ -133,21 +165,29 @@ class FruitWindow(QtWidgets.QMainWindow):
         cv2.waitKey(1)
 
     def chooseFruit(self,id):
+        self.countFruit(id)
         if id == self.fruitID:
             self.fd1.write(b'\xff\x01')
-            self.printFruitCount(self.fruitDict[id])
+            # self.printFruitCount(self.fruitDict[id])
+        self.updateCount()
 
+    def countFruit(self,id):
+        fruit = self.fruitDict[id]
+        self.fruitCount[fruit] = self.fruitCount[fruit] + 1
+        self.showFruitInfo(fruit)
 
     def updateCount(self):
-        # self.ui.count0.setText(str(self.fruitCount['Apple']))
-        # self.ui.count1.setText(str(self.fruitCount['Banana']))
-        # self.ui.count2.setText(str(self.fruitCount['Orange']))
-        # self.ui.count3.setText(str(self.fruitCount['Mongo']))
-        # self.ui.count4.setText(str(self.fruitCount['PineApple']))
-        print('count')
+        # f1 = (self.fruitCount['Apple'])
+        self.ui.count0.setText('apple : '+str(self.fruitCount['Apple']))
+        self.ui.count1.setText('Banana : '+str(self.fruitCount['Banana']))
+        self.ui.count2.setText('Orange : '+str(self.fruitCount['Orange']))
+        self.ui.count3.setText('Mongo : '+str(self.fruitCount['Mongo']))
+        self.ui.count4.setText('PineApple : '+str(self.fruitCount['PineApple']))
+        # print(f1)
 
-
-
+    def showFruitInfo(self,fruit):
+        info = fruitInformation.txtwindow(fruit)
+        self.ui.fruitInfo.setText(info)
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
