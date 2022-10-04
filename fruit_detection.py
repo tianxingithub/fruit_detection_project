@@ -5,7 +5,8 @@ import cv2
 import numpy as np
 import serial
 from PyQt5.QtGui import QPixmap, QImage
-from PyQt5.QtWidgets import QMainWindow, QGraphicsPixmapItem, QGraphicsScene
+from PyQt5.QtWidgets import QMainWindow, QGraphicsPixmapItem, QGraphicsScene, QMessageBox
+from pyqt5_plugins.examplebuttonplugin import QtGui
 from tensorflow.keras.preprocessing import image
 from pyqt5_plugins.examplebutton import QtWidgets
 from keras.models import load_model
@@ -26,7 +27,8 @@ class FruitWindow(QtWidgets.QMainWindow):
         self.ui.actionOrange.triggered.connect(self.changeFruit2)
         self.ui.actionMonago.triggered.connect(self.changeFruit3)
         self.ui.actionPineApple.triggered.connect(self.changeFruit4)
-        self.ui.about.triggered.connect(self.updateCount)
+        self.ui.running.triggered.connect(self.howRun)
+        self.ui.about.triggered.connect(self.aboutme)
 
         self.count = 1
         self.fd1 = serial.Serial("COM1", baudrate=115200, timeout=1)
@@ -49,6 +51,18 @@ class FruitWindow(QtWidgets.QMainWindow):
         }
         self.updateCount()
 
+    def aboutme(self):
+        QMessageBox.about(self,'关于','【hqyj实习项目】\n基于Python的人工智能水果识别\n使用CNN实现')
+
+    def howRun(self):
+        QMessageBox.about(self, '菜单栏说明',
+                          '【状态】：\n\t'
+                          '[Start]:连续读取10张照片，用Opencv显示图片\n\t'
+                          '[End]:暂无实际意义\n\t'
+                          '[Step]:一次读取一张照片，用QImage在系统界面显示\n'
+                          '【筛选的水果类别】:\n\t'
+                          '默认当识别出苹果后，给模拟机械臂发出指定弹出水果\n\t'
+                          '选择哪个下拉菜单就弹出哪个种类水果')
 
     def printFruitCount(self,fruit):
         self.fruitCount[fruit] = self.fruitCount[fruit]+1
@@ -122,8 +136,6 @@ class FruitWindow(QtWidgets.QMainWindow):
         fID = self.getFruit(path)
         self.chooseFruit(fID)
 
-
-
     def changeFruit0(self):
         self.changeID(0)
     def changeFruit1(self):
@@ -142,6 +154,7 @@ class FruitWindow(QtWidgets.QMainWindow):
     def end(self):
         self.addLog('end')
         self.going = False
+        self.setStyle()
 
     def addLog(self,info):
         tt = time.strftime(" %Y-%m-%d %H:%M:%S", time.localtime())
@@ -170,6 +183,11 @@ class FruitWindow(QtWidgets.QMainWindow):
             self.fd1.write(b'\xff\x01')
             # self.printFruitCount(self.fruitDict[id])
         self.updateCount()
+
+    def setStyle(self):
+
+
+        print('style')
 
     def countFruit(self,id):
         fruit = self.fruitDict[id]
