@@ -8,6 +8,7 @@
 
 主要的py文件说明：
 fruit_detection.py：主文件，运行时的文件
+Fruit_detection.py：主文件，运行时的文件
 FruitPrevision.py：QT界面文件
 FruitClassifyTraing.py：模型训练
 FruitClassifyTest.py：模型测试
