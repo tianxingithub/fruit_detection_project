@@ -52,7 +52,9 @@ class FruitWindow(QtWidgets.QMainWindow):
         self.updateCount()
 
     def aboutme(self):
-        QMessageBox.about(self,'关于','【hqyj实习项目】\n基于Python的人工智能水果识别\n使用CNN实现')
+        QMessageBox.about(self,'关于','【hqyj实习项目】\n\t'
+                                    '基于Python的人工智能水果识别\n'
+                                    '更多：bravos.04.segue@icloud.com(留下回信地址)')
 
     def howRun(self):
         QMessageBox.about(self, '菜单栏说明',
