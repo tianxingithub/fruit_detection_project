@@ -13,3 +13,7 @@ FruitPrevision.py：QT界面文件
 FruitClassifyTraing.py：模型训练
 FruitClassifyTest.py：模型测试
 fruitInformation：返回该水果的信息，可用爬虫实现
+
+# 2022-11-15
+增加线程来实现显示图片
+用爬虫来实现动态爬取数据
