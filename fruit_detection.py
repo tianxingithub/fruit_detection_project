@@ -1,6 +1,6 @@
 import sys
 import time
-
+from threading import Thread
 import cv2
 import numpy as np
 import serial
@@ -12,16 +12,17 @@ from pyqt5_plugins.examplebutton import QtWidgets
 from keras.models import load_model
 import fruitInformation
 
-import FruitPrevision
+import Fruit_QTgui
+
 
 class FruitWindow(QtWidgets.QMainWindow):
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
-        self.ui = FruitPrevision.Ui_MainWindow()
+        self.ui = Fruit_QTgui.Ui_MainWindow()
         self.ui.setupUi(self)
-        self.ui.actionStart.triggered.connect(self.start2)
-        self.ui.actionStep.triggered.connect(self.step2)
-        self.ui.actionEnd.triggered.connect(self.end)
+        self.ui.actionStart.triggered.connect(self.__start2)
+        self.ui.actionStep.triggered.connect(self.__step2)
+        self.ui.actionEnd.triggered.connect(self.__end)
         self.ui.actionApple.triggered.connect(self.changeFruit0)
         self.ui.actionBanana.triggered.connect(self.changeFruit1)
         self.ui.actionOrange.triggered.connect(self.changeFruit2)
@@ -36,25 +37,25 @@ class FruitWindow(QtWidgets.QMainWindow):
         self.fruitID = 0
         self.model = load_model(r'./model/model.h5')
         self.fruitDict = {
-            0:'Apple',
-            1:'Banana',
-            2:'Orange',
-            3:'Mongo',
-            4:'PineApple'
+            0: 'Apple',
+            1: 'Banana',
+            2: 'Orange',
+            3: 'Mongo',
+            4: 'PineApple'
         }
         self.fruitCount = {
-            'Apple':0,
-            'Banana':0,
-            'Orange':0,
-            'Mongo':0,
-            'PineApple':0
+            'Apple': 0,
+            'Banana': 0,
+            'Orange': 0,
+            'Mongo': 0,
+            'PineApple': 0
         }
         self.updateCount()
 
     def aboutme(self):
-        QMessageBox.about(self,'关于','【hqyj实习项目】\n\t'
-                                    '基于Python的人工智能水果识别\n'
-                                    '更多：bravos.04.segue@icloud.com(留下回信地址)')
+        QMessageBox.about(self, '关于', '【hqyj实习项目】\n\t'
+                                      '基于Python的人工智能水果识别\n'
+                                      '更多：bravos.04.segue@icloud.com(留下回信地址)')
 
     def howRun(self):
         QMessageBox.about(self, '菜单栏说明',
@@ -66,11 +67,11 @@ class FruitWindow(QtWidgets.QMainWindow):
                           '默认当识别出苹果后，给模拟机械臂发出指定弹出水果\n\t'
                           '选择哪个下拉菜单就弹出哪个种类水果')
 
-    def printFruitCount(self,fruit):
-        self.fruitCount[fruit] = self.fruitCount[fruit]+1
+    def printFruitCount(self, fruit):
+        self.fruitCount[fruit] = self.fruitCount[fruit] + 1
         print(f'    Have chose {fruit} {self.fruitCount[fruit]} times')
 
-    def getFruit(self,test_img):
+    def getFruit(self, test_img):
         img = image.load_img(test_img, target_size=(128, 128))
         img_array = image.img_to_array(img)
         img_array = np.array(img_array) / 255.0
@@ -86,10 +87,10 @@ class FruitWindow(QtWidgets.QMainWindow):
         return msg
 
     def getPath2(self):
-        path = f'./test/{self.count}.png'
+        path = f'./test_picure/{self.count}.png'
         if self.count == 32:
             self.count = 0
-        self.count = self.count+1
+        self.count = self.count + 1
         return path
 
     def start(self):
@@ -102,10 +103,14 @@ class FruitWindow(QtWidgets.QMainWindow):
                 pp = str(pp[:-1], 'utf-8')
                 fID = self.getFruit(pp)
                 self.showFruit2(pp)
-                print('fruit is ',self.fruitDict[fID])
+                print('fruit is ', self.fruitDict[fID])
                 self.chooseFruit(fID)
-        print('='*40)
+        print('=' * 40)
         self.addLog('start is over')
+
+    def __start2(self):
+        th_start2 = Thread(target=self.start2())
+        th_start2.start()
 
     def start2(self):
         self.addLog('check start')
@@ -116,10 +121,10 @@ class FruitWindow(QtWidgets.QMainWindow):
             else:
                 # pp = str(pp[:-1], 'utf-8')
                 fID = self.getFruit(pp)
-                self.showFruit2(pp)
-                print('fruit is ',self.fruitDict[fID])
+                self.showFruit(pp)
+                print('fruit is ', self.fruitDict[fID])
                 self.chooseFruit(fID)
-        print('='*40)
+        print('=' * 40)
         self.addLog('start is over')
 
     def step(self):
@@ -131,6 +136,10 @@ class FruitWindow(QtWidgets.QMainWindow):
         fID = self.getFruit(pp)
         self.chooseFruit(fID)
 
+    def __step2(self):
+        th_step2 = Thread(target=self.step2())
+        th_step2.start()
+
     def step2(self):
         self.addLog('check step')
         path = self.getPath2()
@@ -140,30 +149,38 @@ class FruitWindow(QtWidgets.QMainWindow):
 
     def changeFruit0(self):
         self.changeID(0)
+
     def changeFruit1(self):
         self.changeID(1)
+
     def changeFruit2(self):
         self.changeID(2)
+
     def changeFruit3(self):
         self.changeID(3)
+
     def changeFruit4(self):
         self.changeID(4)
 
-    def changeID(self,ID):
+    def changeID(self, ID):
         self.fruitID = ID
-        self.addLog(f'changed fruit, now fruit is {self.fruitDict[ID]}')
+        self.addLog(f'CHANEGED! If fruit is {self.fruitDict[ID]}, then move it.')
+
+    def __end(self):
+        th_end = Thread(target=self.end())
+        th_end.start()
 
     def end(self):
         self.addLog('end')
         self.going = False
         self.setStyle()
 
-    def addLog(self,info):
+    def addLog(self, info):
         tt = time.strftime(" %Y-%m-%d %H:%M:%S", time.localtime())
-        inser = tt + ' '+info
+        inser = tt + ' ' + info
         self.ui.fruitLog.append(inser)
 
-    def showFruit(self,path):
+    def showFruit(self, path):
         frame = QImage(path)
         pix = QPixmap.fromImage(frame)
         item = QGraphicsPixmapItem(pix)  # fitInView(item)
@@ -175,11 +192,11 @@ class FruitWindow(QtWidgets.QMainWindow):
 
     def showFruit2(self, path):
         img = cv2.imread(path)
-        img = cv2.resize(img,(400,300))
+        img = cv2.resize(img, (400, 300))
         cv2.imshow("Fruit", img)
         cv2.waitKey(1)
 
-    def chooseFruit(self,id):
+    def chooseFruit(self, id):
         self.countFruit(id)
         if id == self.fruitID:
             self.fd1.write(b'\xff\x01')
@@ -188,26 +205,26 @@ class FruitWindow(QtWidgets.QMainWindow):
 
     def setStyle(self):
 
-
         print('style')
 
-    def countFruit(self,id):
+    def countFruit(self, id):
         fruit = self.fruitDict[id]
         self.fruitCount[fruit] = self.fruitCount[fruit] + 1
         self.showFruitInfo(fruit)
 
     def updateCount(self):
         # f1 = (self.fruitCount['Apple'])
-        self.ui.count0.setText('apple : '+str(self.fruitCount['Apple']))
-        self.ui.count1.setText('Banana : '+str(self.fruitCount['Banana']))
-        self.ui.count2.setText('Orange : '+str(self.fruitCount['Orange']))
-        self.ui.count3.setText('Mongo : '+str(self.fruitCount['Mongo']))
-        self.ui.count4.setText('PineApple : '+str(self.fruitCount['PineApple']))
+        self.ui.count0.setText('apple : ' + str(self.fruitCount['Apple']))
+        self.ui.count1.setText('Banana : ' + str(self.fruitCount['Banana']))
+        self.ui.count2.setText('Orange : ' + str(self.fruitCount['Orange']))
+        self.ui.count3.setText('Mongo : ' + str(self.fruitCount['Mongo']))
+        self.ui.count4.setText('PineApple : ' + str(self.fruitCount['PineApple']))
         # print(f1)
 
-    def showFruitInfo(self,fruit):
+    def showFruitInfo(self, fruit):
         info = fruitInformation.txtwindow(fruit)
         self.ui.fruitInfo.setText(info)
+
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
