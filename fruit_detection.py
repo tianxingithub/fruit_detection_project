@@ -4,7 +4,9 @@ from threading import Thread
 import cv2
 import numpy as np
 import serial
+from PyQt5.QtCore import *
 from PyQt5.QtGui import QPixmap, QImage
+from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QMainWindow, QGraphicsPixmapItem, QGraphicsScene, QMessageBox
 from pyqt5_plugins.examplebuttonplugin import QtGui
 from tensorflow.keras.preprocessing import image
@@ -14,15 +16,51 @@ import fruitInformation
 
 import Fruit_QTgui
 
+# 继承 QObject
+class Runthread(QtCore.QObject):
+    #  通过类成员对象定义信号对象
+    signal = pyqtSignal(str)
+
+    def __init__(self):
+        super(Runthread, self).__init__()
+        self.flag = True
+        self.count = 0
+        self.fd1 = serial.Serial("COM1", baudrate=115200, timeout=1)
+
+    def __del__(self):
+        print(">>> __del__")
+
+    def getPath(self):
+        msg = self.fd1.readline()
+        if len(msg) == 0:
+            return 'no pic'
+        return msg
+
+    def getPath2(self):
+        path = f'./test_picure/{self.count}.png'
+        self.count = self.count + 1
+        if self.count == 33:
+            self.count = 0
+
+        return path
+
+    def run(self):
+        while self.flag:
+            path = self.getPath2()
+            self.signal.emit(path)  # 注意这里与_signal = pyqtSignal(str)中的类型相同
+            time.sleep(1)
+        print(">>> run end: ")
+
 
 class FruitWindow(QtWidgets.QMainWindow):
+    _startThread = pyqtSignal()
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
         self.ui = Fruit_QTgui.Ui_MainWindow()
         self.ui.setupUi(self)
         self.ui.actionStart.triggered.connect(self.__start2)
-        self.ui.actionStep.triggered.connect(self.__step2)
-        self.ui.actionEnd.triggered.connect(self.__end)
+        self.ui.actionStep.triggered.connect(self.step2)
+        self.ui.actionEnd.triggered.connect(self.end)
         self.ui.actionApple.triggered.connect(self.changeFruit0)
         self.ui.actionBanana.triggered.connect(self.changeFruit1)
         self.ui.actionOrange.triggered.connect(self.changeFruit2)
@@ -30,10 +68,9 @@ class FruitWindow(QtWidgets.QMainWindow):
         self.ui.actionPineApple.triggered.connect(self.changeFruit4)
         self.ui.running.triggered.connect(self.howRun)
         self.ui.about.triggered.connect(self.aboutme)
+        # self.ui.hitButton.triggered.connect(self.hit_fruit)
 
-        self.count = 1
-        self.fd1 = serial.Serial("COM1", baudrate=115200, timeout=1)
-        self.going = True
+        # self.fd1 = serial.Serial("COM1", baudrate=115200, timeout=1)
         self.fruitID = 0
         self.model = load_model(r'./model/model.h5')
         self.fruitDict = {
@@ -51,6 +88,24 @@ class FruitWindow(QtWidgets.QMainWindow):
             'PineApple': 0
         }
         self.updateCount()
+        self.count = 0
+        self.myT = Runthread()  # 创建线程对象
+        self.thread = QThread(self)  # 初始化QThread子线程
+        # 把自定义线程加入到QThread子线程中
+        self.myT.moveToThread(self.thread)
+
+        self._startThread.connect(self.myT.run)  # 只能通过信号-槽启动线程处理函数
+        self.myT.signal.connect(self.call_backlog)
+
+    def hit_fruit(self):
+        self.fd1.write(b'\xff\x01')
+
+    def call_backlog(self, msg):
+        # msg为图片路径
+        self.addLog(msg)
+        fID = self.getFruit(msg)
+        self.showFruit(msg)
+        self.chooseFruit(fID)
 
     def aboutme(self):
         QMessageBox.about(self, '关于', '【hqyj实习项目】\n\t'
@@ -81,16 +136,17 @@ class FruitWindow(QtWidgets.QMainWindow):
         return fruitId
 
     def getPath(self):
-        msg = self.fd1.readline()
+        # msg = self.fd1.readline()
+        msg = []
         if len(msg) == 0:
             return 'no pic'
         return msg
 
     def getPath2(self):
         path = f'./test_picure/{self.count}.png'
-        if self.count == 32:
-            self.count = 0
         self.count = self.count + 1
+        if self.count == 33:
+            self.count = 0
         return path
 
     def start(self):
@@ -105,27 +161,18 @@ class FruitWindow(QtWidgets.QMainWindow):
                 self.showFruit2(pp)
                 print('fruit is ', self.fruitDict[fID])
                 self.chooseFruit(fID)
+
         print('=' * 40)
         self.addLog('start is over')
 
     def __start2(self):
-        th_start2 = Thread(target=self.start2())
-        th_start2.start()
-
-    def start2(self):
         self.addLog('check start')
-        for i in range(10):
-            pp = self.getPath2()
-            if pp == 'no pic':
-                pass
-            else:
-                # pp = str(pp[:-1], 'utf-8')
-                fID = self.getFruit(pp)
-                self.showFruit(pp)
-                print('fruit is ', self.fruitDict[fID])
-                self.chooseFruit(fID)
-        print('=' * 40)
-        self.addLog('start is over')
+        if self.thread.isRunning():
+            return
+        self.myT.flag=True
+        self.thread.start()
+        self._startThread.emit()
+
 
     def step(self):
         self.addLog('check step')
@@ -135,10 +182,6 @@ class FruitWindow(QtWidgets.QMainWindow):
         self.showFruit(pp)
         fID = self.getFruit(pp)
         self.chooseFruit(fID)
-
-    def __step2(self):
-        th_step2 = Thread(target=self.step2())
-        th_step2.start()
 
     def step2(self):
         self.addLog('check step')
@@ -166,14 +209,13 @@ class FruitWindow(QtWidgets.QMainWindow):
         self.fruitID = ID
         self.addLog(f'CHANEGED! If fruit is {self.fruitDict[ID]}, then move it.')
 
-    def __end(self):
-        th_end = Thread(target=self.end())
-        th_end.start()
-
     def end(self):
         self.addLog('end')
-        self.going = False
-        self.setStyle()
+        if not self.thread.isRunning():
+            return
+        self.myT.flag=False
+        self.thread.quit()  # 退出
+        self.thread.wait()  # 回收资源
 
     def addLog(self, info):
         tt = time.strftime(" %Y-%m-%d %H:%M:%S", time.localtime())
