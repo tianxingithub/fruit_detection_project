@@ -70,9 +70,9 @@ class FruitWindow(QtWidgets.QMainWindow):
         self.ui.actionPineApple.triggered.connect(self.changeFruit4)
         self.ui.running.triggered.connect(self.howRun)
         self.ui.about.triggered.connect(self.aboutme)
-        # self.ui.hitButton.triggered.connect(self.hit_fruit)
+        self.ui.hitButton.clicked.connect(self.hit)
 
-        # self.fd1 = serial.Serial("COM1", baudrate=115200, timeout=1)
+
         self.fruitID = 0
         self.model = load_model(r'./model/model.h5')
         self.fruitDict = {
@@ -99,7 +99,9 @@ class FruitWindow(QtWidgets.QMainWindow):
         self._startThread.connect(self.myT.run)  # 只能通过信号-槽启动线程处理函数
         self.myT.signal.connect(self.call_backlog)
 
-
+    def hit(self):
+        self.addLog('click hit')
+        self.myT.hit_fruit()
 
     def call_backlog(self, msg,fd):
         # msg为图片路径
@@ -136,6 +138,7 @@ class FruitWindow(QtWidgets.QMainWindow):
         fruitId = a.tolist()[0]
         return fruitId
 
+    # 可删
     def getPath(self):
         # msg = self.fd1.readline()
         msg = []
@@ -143,6 +146,7 @@ class FruitWindow(QtWidgets.QMainWindow):
             return 'no pic'
         return msg
 
+    # 可删
     def getPath2(self):
         path = f'./test_picure/{self.count}.png'
         self.count = self.count + 1
