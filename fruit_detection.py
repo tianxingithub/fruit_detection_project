@@ -19,13 +19,14 @@ import Fruit_QTgui
 # 继承 QObject
 class Runthread(QtCore.QObject):
     #  通过类成员对象定义信号对象
-    signal = pyqtSignal(str)
+    signal = pyqtSignal([str,serial.serialwin32.Serial])
 
     def __init__(self):
         super(Runthread, self).__init__()
         self.flag = True
         self.count = 0
         self.fd1 = serial.Serial("COM1", baudrate=115200, timeout=1)
+        # print('type fd1:', type(self.fd1))
 
     def __del__(self):
         print(">>> __del__")
@@ -41,16 +42,17 @@ class Runthread(QtCore.QObject):
         self.count = self.count + 1
         if self.count == 33:
             self.count = 0
-
         return path
 
     def run(self):
         while self.flag:
             path = self.getPath2()
-            self.signal.emit(path)  # 注意这里与_signal = pyqtSignal(str)中的类型相同
+            self.signal.emit(path, self.fd1)  # 注意这里与_signal = pyqtSignal(str)中的类型相同
             time.sleep(1)
         print(">>> run end: ")
 
+    def hit_fruit(self):
+        self.fd1.write(b'\xff\x01')
 
 class FruitWindow(QtWidgets.QMainWindow):
     _startThread = pyqtSignal()
@@ -89,23 +91,22 @@ class FruitWindow(QtWidgets.QMainWindow):
         }
         self.updateCount()
         self.count = 0
+
         self.myT = Runthread()  # 创建线程对象
         self.thread = QThread(self)  # 初始化QThread子线程
         # 把自定义线程加入到QThread子线程中
         self.myT.moveToThread(self.thread)
-
         self._startThread.connect(self.myT.run)  # 只能通过信号-槽启动线程处理函数
         self.myT.signal.connect(self.call_backlog)
 
-    def hit_fruit(self):
-        self.fd1.write(b'\xff\x01')
 
-    def call_backlog(self, msg):
+
+    def call_backlog(self, msg,fd):
         # msg为图片路径
         self.addLog(msg)
         fID = self.getFruit(msg)
         self.showFruit(msg)
-        self.chooseFruit(fID)
+        self.chooseFruit(fID,fd)
 
     def aboutme(self):
         QMessageBox.about(self, '关于', '【hqyj实习项目】\n\t'
@@ -186,9 +187,11 @@ class FruitWindow(QtWidgets.QMainWindow):
     def step2(self):
         self.addLog('check step')
         path = self.getPath2()
+        self.addLog(path)
         self.showFruit(path)
         fID = self.getFruit(path)
-        self.chooseFruit(fID)
+        if fID == self.fruitID:
+            self.myT.hit_fruit()
 
     def changeFruit0(self):
         self.changeID(0)
@@ -238,11 +241,10 @@ class FruitWindow(QtWidgets.QMainWindow):
         cv2.imshow("Fruit", img)
         cv2.waitKey(1)
 
-    def chooseFruit(self, id):
+    def chooseFruit(self, id,fd):
         self.countFruit(id)
         if id == self.fruitID:
-            self.fd1.write(b'\xff\x01')
-            # self.printFruitCount(self.fruitDict[id])
+            fd.write(b'\xff\x01')
         self.updateCount()
 
     def setStyle(self):
