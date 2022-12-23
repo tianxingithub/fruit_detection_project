@@ -46,9 +46,17 @@ class Runthread(QtCore.QObject):
 
     def run(self):
         while self.flag:
-            path = self.getPath2()
-            self.signal.emit(path, self.fd1)  # 注意这里与_signal = pyqtSignal(str)中的类型相同
-            time.sleep(1)
+            # path2 = self.getPath2() # 测试
+            path = self.getPath() # 测试
+
+
+            if path == 'no pic':
+                continue
+            else:
+                msg = str(path[:-1],'utf-8')
+                print(msg)
+            self.signal.emit(msg, self.fd1)  # 注意这里与_signal = pyqtSignal(str)中的类型相同
+            time.sleep(0.2)
         print(">>> run end: ")
 
     def hit_fruit(self):
@@ -103,7 +111,7 @@ class FruitWindow(QtWidgets.QMainWindow):
         self.addLog('click hit')
         self.myT.hit_fruit()
 
-    def call_backlog(self, msg,fd):
+    def call_backlog(self, msg, fd):
         # msg为图片路径
         self.addLog(msg)
         fID = self.getFruit(msg)
@@ -138,37 +146,12 @@ class FruitWindow(QtWidgets.QMainWindow):
         fruitId = a.tolist()[0]
         return fruitId
 
-    # 可删
-    def getPath(self):
-        # msg = self.fd1.readline()
-        msg = []
-        if len(msg) == 0:
-            return 'no pic'
-        return msg
-
-    # 可删
     def getPath2(self):
         path = f'./test_picure/{self.count}.png'
         self.count = self.count + 1
         if self.count == 33:
             self.count = 0
         return path
-
-    def start(self):
-        self.addLog('check start')
-        for i in range(10):
-            pp = self.getPath2()
-            if pp == 'no pic':
-                pass
-            else:
-                pp = str(pp[:-1], 'utf-8')
-                fID = self.getFruit(pp)
-                self.showFruit2(pp)
-                print('fruit is ', self.fruitDict[fID])
-                self.chooseFruit(fID)
-
-        print('=' * 40)
-        self.addLog('start is over')
 
     def __start2(self):
         self.addLog('check start')
@@ -177,16 +160,6 @@ class FruitWindow(QtWidgets.QMainWindow):
         self.myT.flag=True
         self.thread.start()
         self._startThread.emit()
-
-
-    def step(self):
-        self.addLog('check step')
-        msg = self.fd1.readlines()
-        pp = msg[-1]
-        pp = str(pp[:-1], 'utf-8')
-        self.showFruit(pp)
-        fID = self.getFruit(pp)
-        self.chooseFruit(fID)
 
     def step2(self):
         self.addLog('check step')
