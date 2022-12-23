@@ -14,9 +14,11 @@
 
 #### fruitInformation：返回该水果的信息，可用爬虫去发展其他信息，暂未实现
 
-#### 'demo'：测试文件包  'model'：存放训练模型		'test_picure': step操作时显示的图片		'info': 水果相关信息
+#### 'test'：测试文件包  'model'：存放训练模型		'test_picure': step操作时显示的图片		'info': 水果相关信息
 
 #### 'Tools': 里面有创建串口工具和模拟机械臂的工具
+
+#### 'Demo': 打包好的exe文件，可直接运行fruit_detect.exe可看结果。
 
 ## 2022-11-15
 ### 增加线程来实现不卡顿显示图片
