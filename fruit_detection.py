@@ -38,18 +38,20 @@ class Runthread(QtCore.QObject):
         return msg
 
     def getPath2(self):
-        path = f'./test_picure/{self.count}.png'
+        path = f'./test_picture/{self.count}.png'
         self.count = self.count + 1
         if self.count == 33:
             self.count = 0
         return path
 
+    def runStep(self):
+        path2 = self.getPath2()
+        self.signal.emit(path2, self.fd1)
+
     def run(self):
         while self.flag:
             # path2 = self.getPath2() # 测试
             path = self.getPath() # 测试
-
-
             if path == 'no pic':
                 continue
             else:
@@ -64,6 +66,7 @@ class Runthread(QtCore.QObject):
 
 class FruitWindow(QtWidgets.QMainWindow):
     _startThread = pyqtSignal()
+    _startThread2 = pyqtSignal()
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
         self.ui = Fruit_QTgui.Ui_MainWindow()
@@ -105,6 +108,7 @@ class FruitWindow(QtWidgets.QMainWindow):
         # 把自定义线程加入到QThread子线程中
         self.myT.moveToThread(self.thread)
         self._startThread.connect(self.myT.run)  # 只能通过信号-槽启动线程处理函数
+        self._startThread2.connect(self.myT.runStep)  # 只能通过信号-槽启动线程处理函数
         self.myT.signal.connect(self.call_backlog)
 
     def hit(self):
@@ -126,9 +130,9 @@ class FruitWindow(QtWidgets.QMainWindow):
     def howRun(self):
         QMessageBox.about(self, '菜单栏说明',
                           '【状态】：\n\t'
-                          '[Start]:连续读取10张照片，用Opencv显示图片\n\t'
-                          '[End]:暂无实际意义\n\t'
-                          '[Step]:一次读取一张照片，用QImage在系统界面显示\n'
+                          '[Start]:连续读取摄像头照片，并在界面显示图片\n\t'
+                          '[End]:停止连续读取照片\n\t'
+                          '[Step]:一次读取一张本地照片(test_picture文件夹内)，在系统界面显示\n'
                           '【筛选的水果类别】:\n\t'
                           '默认当识别出苹果后，给模拟机械臂发出指定弹出水果\n\t'
                           '选择哪个下拉菜单就弹出哪个种类水果')
@@ -147,7 +151,7 @@ class FruitWindow(QtWidgets.QMainWindow):
         return fruitId
 
     def getPath2(self):
-        path = f'./test_picure/{self.count}.png'
+        path = f'./test_picture/{self.count}.png'
         self.count = self.count + 1
         if self.count == 33:
             self.count = 0
@@ -163,12 +167,13 @@ class FruitWindow(QtWidgets.QMainWindow):
 
     def step2(self):
         self.addLog('check step')
-        path = self.getPath2()
-        self.addLog(path)
-        self.showFruit(path)
-        fID = self.getFruit(path)
-        if fID == self.fruitID:
-            self.myT.hit_fruit()
+        # self._startThread2.emit()
+        # path = self.getPath2()
+        # self.addLog(path)
+        # self.showFruit(path)
+        # fID = self.getFruit(path)
+        # if fID == self.fruitID:
+        #     self.myT.hit_fruit()
 
     def changeFruit0(self):
         self.changeID(0)
