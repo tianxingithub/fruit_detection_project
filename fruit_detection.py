@@ -66,7 +66,7 @@ class Runthread(QtCore.QObject):
 
 class FruitWindow(QtWidgets.QMainWindow):
     _startThread = pyqtSignal()
-    _startThread2 = pyqtSignal()
+    # _startThread2 = pyqtSignal()
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
         self.ui = Fruit_QTgui.Ui_MainWindow()
@@ -108,7 +108,7 @@ class FruitWindow(QtWidgets.QMainWindow):
         # 把自定义线程加入到QThread子线程中
         self.myT.moveToThread(self.thread)
         self._startThread.connect(self.myT.run)  # 只能通过信号-槽启动线程处理函数
-        self._startThread2.connect(self.myT.runStep)  # 只能通过信号-槽启动线程处理函数
+        # self._startThread2.connect(self.myT.runStep)  # 只能通过信号-槽启动线程处理函数
         self.myT.signal.connect(self.call_backlog)
 
     def hit(self):
