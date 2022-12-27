@@ -18,7 +18,7 @@ from os import path as os_path
 import fruitInformation
 import Fruit_QTgui
 
-
+fd1 = serial.Serial("COM1", baudrate=115200, timeout=1)
 # 继承 QObject
 class Runthread(QtCore.QObject):
     #  通过类成员对象定义信号对象
@@ -28,14 +28,14 @@ class Runthread(QtCore.QObject):
         super(Runthread, self).__init__()
         self.flag = True
         self.count = 0
-        self.fd1 = serial.Serial("COM1", baudrate=115200, timeout=1)
+        # self.fd1 = serial.Serial("COM1", baudrate=115200, timeout=1)
         # print('type fd1:', type(self.fd1))
 
     def __del__(self):
         print(">>> __del__")
 
     def getPath(self):
-        msg = self.fd1.readline()
+        msg = fd1.readline()
         if len(msg) == 0:
             return 'no pic'
         return msg
@@ -58,7 +58,7 @@ class Runthread(QtCore.QObject):
 
     def runStep(self):
         path2 = self.getPath2()
-        self.signal.emit(path2, self.fd1)
+        self.signal.emit(path2, fd1)
 
     def run(self):
         while self.flag:
@@ -69,13 +69,13 @@ class Runthread(QtCore.QObject):
             else:
                 msg = str(path[:-1], 'utf-8')
                 print(msg)
-            self.signal.emit(msg, self.fd1)  # 注意这里与_signal = pyqtSignal(str)中的类型相同
+            self.signal.emit(msg, fd1)  # 注意这里与_signal = pyqtSignal(str)中的类型相同
             # time.sleep(0.2)
             sleep(0.2)
         print(">>> run end: ")
 
     def hit_fruit(self):
-        self.fd1.write(b'\xff\x01')
+        fd1.write(b'\xff\x01')
 
 
 class FruitWindow(QtWidgets.QMainWindow):
@@ -125,16 +125,39 @@ class FruitWindow(QtWidgets.QMainWindow):
         # self._startThread2.connect(self.myT.runStep)  # 只能通过信号-槽启动线程处理函数
         self.myT.signal.connect(self.call_backlog)
 
-    def hit(self):
-        self.addLog('click hit')
-        self.myT.hit_fruit()
-
     def call_backlog(self, msg, fd):
         # msg为图片路径
         self.addLog(msg)
-        # fID = self.getFruit(msg)
+        fID = self.getFruit(msg)
         self.showFruit(msg)
         # self.chooseFruit(fID,fd)
+
+    def getFruit(self, test_img):
+        img = image.load_img(test_img, target_size=(128, 128))
+        img_array = image.img_to_array(img)
+        img_array = np.array(img_array) / 255.0
+        predictions = self.model.predict(img_array[np.newaxis, ...], verbose=None)
+        a = np.argmax(predictions, axis=-1)
+        fruitId = a.tolist()[0]
+        return fruitId
+
+    def __start2(self):
+        self.addLog('check start')
+        if self.thread.isRunning():
+            return
+        self.myT.flag = True
+        self.thread.start()
+        self._startThread.emit()
+
+    def step2(self):
+        self.addLog('check step')
+        # self._startThread2.emit()
+        path = self.getPath3()
+        self.addLog(path)
+        self.showFruit(path)
+        # fID = self.getFruit(path)
+        # if fID == self.fruitID:
+        #     self.myT.hit_fruit()
 
     def aboutme(self):
         QMessageBox.about(self, '关于', '【hqyj实习项目】\n\t'
@@ -155,22 +178,6 @@ class FruitWindow(QtWidgets.QMainWindow):
         self.fruitCount[fruit] = self.fruitCount[fruit] + 1
         print(f'    Have chose {fruit} {self.fruitCount[fruit]} times')
 
-    def getFruit(self, test_img):
-        img = image.load_img(test_img, target_size=(128, 128))
-        img_array = image.img_to_array(img)
-        img_array = np.array(img_array) / 255.0
-        predictions = self.model.predict(img_array[np.newaxis, ...], verbose=None)
-        a = np.argmax(predictions, axis=-1)
-        fruitId = a.tolist()[0]
-        return fruitId
-
-    def getPath2(self):
-        path = f'./test_picture/{self.count}.png'
-        self.count = self.count + 1
-        if self.count == 33:
-            self.count = 0
-        return path
-
     def getPath3(self):
         dir = getcwd()
         dir = dir + '\\' + 'step_picture'
@@ -186,24 +193,6 @@ class FruitWindow(QtWidgets.QMainWindow):
         if self.count == len(files):
             self.count = 0
         return path
-
-    def __start2(self):
-        self.addLog('check start')
-        if self.thread.isRunning():
-            return
-        self.myT.flag = True
-        self.thread.start()
-        self._startThread.emit()
-
-    def step2(self):
-        self.addLog('check step')
-        # self._startThread2.emit()
-        path = self.getPath3()
-        self.addLog(path)
-        self.showFruit(path)
-        # fID = self.getFruit(path)
-        # if fID == self.fruitID:
-        #     self.myT.hit_fruit()
 
     def changeFruit0(self):
         self.changeID(0)
@@ -223,6 +212,10 @@ class FruitWindow(QtWidgets.QMainWindow):
     def changeID(self, ID):
         self.fruitID = ID
         self.addLog(f'CHANEGED! If fruit is {self.fruitDict[ID]}, then move it.')
+
+    def hit(self):
+        self.addLog('click hit')
+        self.myT.hit_fruit()
 
     def end(self):
         self.addLog('end')
@@ -248,21 +241,11 @@ class FruitWindow(QtWidgets.QMainWindow):
         self.ui.fruitPic.fitInView(item)
         self.ui.fruitPic.show()
 
-    # def showFruit2(self, path):
-    #     img = cv2.imread(path)
-    #     img = cv2.resize(img, (400, 300))
-    #     cv2.imshow("Fruit", img)
-    #     cv2.waitKey(1)
-
     def chooseFruit(self, id, fd):
         self.countFruit(id)
         if id == self.fruitID:
             fd.write(b'\xff\x01')
         self.updateCount()
-
-    def setStyle(self):
-
-        print('style')
 
     def countFruit(self, id):
         fruit = self.fruitDict[id]
