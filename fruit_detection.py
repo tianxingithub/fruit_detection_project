@@ -1,7 +1,7 @@
-import sys
-import time
+from sys import argv as sys_argv
+from sys import exit as sys_exit
+from time import sleep, strftime, localtime
 from threading import Thread
-import cv2
 import numpy as np
 import serial
 from PyQt5.QtCore import *
@@ -12,14 +12,17 @@ from pyqt5_plugins.examplebuttonplugin import QtGui
 from tensorflow.keras.preprocessing import image
 from pyqt5_plugins.examplebutton import QtWidgets
 from keras.models import load_model
-import fruitInformation
+from os import getcwd, mkdir, listdir
+from os import path as os_path
 
+import fruitInformation
 import Fruit_QTgui
+
 
 # 继承 QObject
 class Runthread(QtCore.QObject):
     #  通过类成员对象定义信号对象
-    signal = pyqtSignal([str,serial.serialwin32.Serial])
+    signal = pyqtSignal([str, serial.serialwin32.Serial])
 
     def __init__(self):
         super(Runthread, self).__init__()
@@ -38,7 +41,16 @@ class Runthread(QtCore.QObject):
         return msg
 
     def getPath2(self):
-        path = f'./test_picture/{self.count}.png'
+        dir = getcwd()
+        dir = dir + '\\' + 'step_picture'
+        folder = os_path.exists(dir)
+        if not folder:
+            mkdir(dir)
+        files = listdir(dir)
+        if len(files) == 0:
+            return "no pic"
+        path = dir + '\\'+files[self.count]
+        print(path)
         self.count = self.count + 1
         if self.count == 33:
             self.count = 0
@@ -51,21 +63,24 @@ class Runthread(QtCore.QObject):
     def run(self):
         while self.flag:
             # path2 = self.getPath2() # 测试
-            path = self.getPath() # 测试
+            path = self.getPath()  # 测试
             if path == 'no pic':
                 continue
             else:
-                msg = str(path[:-1],'utf-8')
+                msg = str(path[:-1], 'utf-8')
                 print(msg)
             self.signal.emit(msg, self.fd1)  # 注意这里与_signal = pyqtSignal(str)中的类型相同
-            time.sleep(0.2)
+            # time.sleep(0.2)
+            sleep(0.2)
         print(">>> run end: ")
 
     def hit_fruit(self):
         self.fd1.write(b'\xff\x01')
 
+
 class FruitWindow(QtWidgets.QMainWindow):
     _startThread = pyqtSignal()
+
     # _startThread2 = pyqtSignal()
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
@@ -82,7 +97,6 @@ class FruitWindow(QtWidgets.QMainWindow):
         self.ui.running.triggered.connect(self.howRun)
         self.ui.about.triggered.connect(self.aboutme)
         self.ui.hitButton.clicked.connect(self.hit)
-
 
         self.fruitID = 0
         self.model = load_model(r'./model/model.h5')
@@ -118,9 +132,9 @@ class FruitWindow(QtWidgets.QMainWindow):
     def call_backlog(self, msg, fd):
         # msg为图片路径
         self.addLog(msg)
-        fID = self.getFruit(msg)
+        # fID = self.getFruit(msg)
         self.showFruit(msg)
-        self.chooseFruit(fID,fd)
+        # self.chooseFruit(fID,fd)
 
     def aboutme(self):
         QMessageBox.about(self, '关于', '【hqyj实习项目】\n\t'
@@ -157,20 +171,36 @@ class FruitWindow(QtWidgets.QMainWindow):
             self.count = 0
         return path
 
+    def getPath3(self):
+        dir = getcwd()
+        dir = dir + '\\' + 'step_picture'
+        folder = os_path.exists(dir)
+        if not folder:
+            mkdir(dir)
+        files = listdir(dir)
+        if len(files) == 0:
+            return "no pic"
+        path = dir + '\\'+files[self.count]
+        print(path)
+        self.count = self.count + 1
+        if self.count == len(files):
+            self.count = 0
+        return path
+
     def __start2(self):
         self.addLog('check start')
         if self.thread.isRunning():
             return
-        self.myT.flag=True
+        self.myT.flag = True
         self.thread.start()
         self._startThread.emit()
 
     def step2(self):
         self.addLog('check step')
         # self._startThread2.emit()
-        # path = self.getPath2()
-        # self.addLog(path)
-        # self.showFruit(path)
+        path = self.getPath3()
+        self.addLog(path)
+        self.showFruit(path)
         # fID = self.getFruit(path)
         # if fID == self.fruitID:
         #     self.myT.hit_fruit()
@@ -198,12 +228,13 @@ class FruitWindow(QtWidgets.QMainWindow):
         self.addLog('end')
         if not self.thread.isRunning():
             return
-        self.myT.flag=False
+        self.myT.flag = False
         self.thread.quit()  # 退出
         self.thread.wait()  # 回收资源
 
     def addLog(self, info):
-        tt = time.strftime(" %Y-%m-%d %H:%M:%S", time.localtime())
+        # tt = time.strftime(" %Y-%m-%d %H:%M:%S", time.localtime())
+        tt = strftime(" %Y-%m-%d %H:%M:%S", localtime())
         inser = tt + ' ' + info
         self.ui.fruitLog.append(inser)
 
@@ -217,13 +248,13 @@ class FruitWindow(QtWidgets.QMainWindow):
         self.ui.fruitPic.fitInView(item)
         self.ui.fruitPic.show()
 
-    def showFruit2(self, path):
-        img = cv2.imread(path)
-        img = cv2.resize(img, (400, 300))
-        cv2.imshow("Fruit", img)
-        cv2.waitKey(1)
+    # def showFruit2(self, path):
+    #     img = cv2.imread(path)
+    #     img = cv2.resize(img, (400, 300))
+    #     cv2.imshow("Fruit", img)
+    #     cv2.waitKey(1)
 
-    def chooseFruit(self, id,fd):
+    def chooseFruit(self, id, fd):
         self.countFruit(id)
         if id == self.fruitID:
             fd.write(b'\xff\x01')
@@ -253,7 +284,7 @@ class FruitWindow(QtWidgets.QMainWindow):
 
 
 if __name__ == '__main__':
-    app = QtWidgets.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys_argv)
     window = FruitWindow()
     window.show()
-    sys.exit(app.exec_())
+    sys_exit(app.exec_())
