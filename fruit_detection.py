@@ -9,7 +9,7 @@ from PyQt5.QtGui import QPixmap, QImage
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QMainWindow, QGraphicsPixmapItem, QGraphicsScene, QMessageBox
 from pyqt5_plugins.examplebuttonplugin import QtGui
-from tensorflow.keras.preprocessing.image import load_img,img_to_array
+from tensorflow.keras.preprocessing import image
 from pyqt5_plugins.examplebutton import QtWidgets
 from keras.models import load_model
 
@@ -135,10 +135,9 @@ class FruitWindow(QtWidgets.QMainWindow):
 
     def getFruit(self, test_img):
         print('start getFruit')
-        # print(test_img)
-        img = load_img(test_img, target_size=(128, 128))
+        img = image.load_img(test_img, target_size=(128, 128))
         print('-'*40)
-        img_array = img_to_array(img)
+        img_array = image.img_to_array(img)
         img_array = np.array(img_array) / 255.0
         predictions = self.model.predict(img_array[np.newaxis, ...])
         a = np.argmax(predictions, axis=-1)
