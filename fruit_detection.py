@@ -128,7 +128,7 @@ class FruitWindow(QtWidgets.QMainWindow):
     def call_backlog(self, msg, fd):
         # msg为图片路径
         self.addLog(msg)
-        fID = self.getFruit(msg)
+        # fID = self.getFruit(msg)
         self.showFruit(msg)
         # self.chooseFruit(fID,fd)
 
