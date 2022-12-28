@@ -11,6 +11,7 @@ from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QMainWindow, QGraphicsPixmapItem, QGraphicsScene, QMessageBox
 from pyqt5_plugins.examplebuttonplugin import QtGui
 from tensorflow.keras.utils import load_img, img_to_array
+from tensorflow.keras.preprocessing import image
 from pyqt5_plugins.examplebutton import QtWidgets
 from keras.models import load_model
 
@@ -134,10 +135,11 @@ class FruitWindow(QtWidgets.QMainWindow):
 
     def getFruit(self, test_img):
         print('start getFruit')
-        # img = image.load_img(test_img, target_size=(128, 128))
-        img = load_img(test_img, target_size=(128, 128))
-        print('-'*40)
-        img_array = img_to_array(img)
+        img = image.load_img(test_img, target_size=(128, 128))
+        # img = load_img(test_img, target_size=(128, 128))
+        print('-'*40) # 卡在 load_img 也不知道为什么，在其他地方测试都正常
+        img_array = image.img_to_array(img)
+        # img_array = img_to_array(img)
         img_array = array(img_array) / 255.0
         predictions = self.model.predict(img_array[newaxis, ...])
         a = argmax(predictions, axis=-1)
