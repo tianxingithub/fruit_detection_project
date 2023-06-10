@@ -5,6 +5,8 @@ from threading import Thread
 # import numpy as np
 from numpy import array,argmax,newaxis
 import serial
+from PyQt5.QtGui import QIcon
+
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5 import QtWidgets, QtCore
@@ -17,14 +19,36 @@ from keras.models import load_model
 
 from os import getcwd, mkdir, listdir
 from os import path as os_path
-
+from qt_material import apply_stylesheet
 import Fruit_QTgui
 
 fd1 = serial.Serial("COM1", baudrate=115200, timeout=1)
+
+
+def QgetFruit(test_img):
+    # print('start getFruit')
+    img = image.load_img(test_img, target_size=(128, 128))
+    # print('-'*40) # 卡在 load_img 也不知道为什么，在其他地方测试都正常 #PIL库版本过低
+    img_array = image.img_to_array(img)
+    # img_array = img_to_array(img)
+    img_array = array(img_array) / 255.0
+    predictions = load_model(r'./model/model.h5').predict(img_array[newaxis, ...])
+    a = argmax(predictions, axis=-1)
+    fruitId = a.tolist()[0]
+    return fruitId
+
+
+
+
+
+
+
+
 # 继承 QObject
 class Runthread(QtCore.QObject):
     #  通过类成员对象定义信号对象
-    signal = pyqtSignal([str, serial.serialwin32.Serial])
+    signal = pyqtSignal([str, serial.serialwin32.Serial, int])
+
 
     def __init__(self):
         super(Runthread, self).__init__()
@@ -51,7 +75,7 @@ class Runthread(QtCore.QObject):
         if len(files) == 0:
             return "no pic"
         path = dir + '\\'+files[self.count]
-        print(path)
+        # print(path)
         self.count = self.count + 1
         if self.count == 33:
             self.count = 0
@@ -69,8 +93,8 @@ class Runthread(QtCore.QObject):
                 continue
             else:
                 msg = str(path[:-1], 'utf-8')
-                print(msg)
-            self.signal.emit(msg, fd1)  # 注意这里与_signal = pyqtSignal(str)中的类型相同
+                qId = QgetFruit(msg)
+                self.signal.emit(msg, fd1,qId)  # 注意这里与_signal = pyqtSignal(str)中的类型相同
             # time.sleep(0.2)
             sleep(0.2)
         print(">>> run end: ")
@@ -126,18 +150,18 @@ class FruitWindow(QtWidgets.QMainWindow):
         # self._startThread2.connect(self.myT.runStep)  # 只能通过信号-槽启动线程处理函数
         self.myT.signal.connect(self.call_backlog)
 
-    def call_backlog(self, msg, fd):
+    def call_backlog(self, msg, fd, qId): #
         # msg为图片路径
         self.addLog(msg)
         # fID = self.getFruit(msg)
         self.showFruit(msg)
-        # self.chooseFruit(fID,fd)
+        self.showFruitInfo(self.fruitDict[qId])
+        self.chooseFruit(qId,fd)
 
     def getFruit(self, test_img):
-        print('start getFruit')
+        # print('start getFruit')
         img = image.load_img(test_img, target_size=(128, 128))
-        # img = load_img(test_img, target_size=(128, 128))
-        print('-'*40) # 卡在 load_img 也不知道为什么，在其他地方测试都正常
+        # print('-'*40) # 卡在 load_img 也不知道为什么，在其他地方测试都正常 #PIL库版本过低
         img_array = image.img_to_array(img)
         # img_array = img_to_array(img)
         img_array = array(img_array) / 255.0
@@ -158,9 +182,14 @@ class FruitWindow(QtWidgets.QMainWindow):
         self.addLog('check step')
         # self._startThread2.emit()
         path = self.getPath3()
-        self.addLog(path)
+        # self.addLog(path)
         self.showFruit(path)
-        # fID = self.getFruit(path)
+        # print(path)
+        fID = self.getFruit(path)
+        # 显示信息并增加个数
+        self.showFruitInfo(self.fruitDict[fID])
+        self.countFruit(fID)
+        self.updateCount()
         # if fID == self.fruitID:
         #     self.myT.hit_fruit()
 
@@ -193,7 +222,7 @@ class FruitWindow(QtWidgets.QMainWindow):
         if len(files) == 0:
             return "no pic"
         path = dir + '\\'+files[self.count]
-        print(path)
+        # print(path)
         self.count = self.count + 1
         if self.count == len(files):
             self.count = 0
@@ -330,5 +359,8 @@ class FruitWindow(QtWidgets.QMainWindow):
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys_argv)
     window = FruitWindow()
+    apply_stylesheet(app, theme='dark_teal.xml')
+    window.setWindowTitle("水果识别")
+    window.setWindowIcon(QIcon("fruit.jpg"))
     window.show()
     sys_exit(app.exec_())
