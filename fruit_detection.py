@@ -150,6 +150,12 @@ class FruitWindow(QtWidgets.QMainWindow):
         # self._startThread2.connect(self.myT.runStep)  # 只能通过信号-槽启动线程处理函数
         self.myT.signal.connect(self.call_backlog)
 
+    def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
+        if not self.thread.isRunning():
+            return
+        self.myT.flag = False
+        self.thread.quit()  # 退出
+        self.thread.wait()  # 回收资源
     def call_backlog(self, msg, fd, qId): #
         # msg为图片路径
         self.addLog(msg)
